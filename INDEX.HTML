@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manulife Ops - KB Assistant</title>
+    <style>
+        :root {
+            --manulife-green: #007A33;
+            --manulife-light-green: #E6F2EC;
+            --bg-color: #F4F7F6;
+            --chat-bg: #FFFFFF;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #E0E0E0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 85vh;
+            background-color: var(--chat-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .chat-header {
+            background-color: var(--manulife-green);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .chat-header span {
+            font-size: 0.9rem;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #FAFAFA;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .bot-message {
+            background-color: white;
+            color: var(--text-main);
+            align-self: flex-start;
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 0;
+        }
+
+        .user-message {
+            background-color: var(--manulife-light-green);
+            color: var(--text-main);
+            align-self: flex-end;
+            border: 1px solid #CDE5D8;
+            border-bottom-right-radius: 0;
+        }
+
+        .typing-indicator {
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            align-self: flex-start;
+            display: none;
+        }
+
+        .chat-input-container {
+            padding: 15px 20px;
+            background-color: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--manulife-green);
+        }
+
+        .send-btn {
+            background-color: var(--manulife-green);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .send-btn:hover {
+            background-color: #006329;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            Manulife Ops KB Assistant <span>PROTOTYPE</span>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                Hello! I am the Operations Knowledge Base Assistant. How can I help you resolve a query today? You can ask me about SOPs, training materials, or system procedures.
+            </div>
+            <div class="typing-indicator" id="typing-indicator">Assistant is searching the knowledge base...</div>
+        </div>
+
+        <div class="chat-input-container">
+            <input type="text" id="user-input" class="chat-input" placeholder="e.g., What is the SOP for password resets?" autocomplete="off">
+            <button id="send-btn" class="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        // Function to append a message to the chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+            messageDiv.textContent = text;
+            
+            // Insert before the typing indicator so it stays at the bottom
+            chatMessages.insertBefore(messageDiv, typingIndicator);
+            scrollToBottom();
+        }
+
+        // Function to auto-scroll to the latest message
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Core logic for handling the message send
+        function handleSend() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // 1. Display User Message
+            addMessage(text, 'user');
+            userInput.value = '';
+
+            // 2. Show "Typing" Indicator
+            typingIndicator.style.display = 'block';
+            scrollToBottom();
+
+            /* =========================================================
+             DEVELOPER NOTE: BACKEND INTEGRATION GOES HERE
+             Later, replace this setTimeout with a fetch() call to your 
+             backend endpoint (e.g., Python/Node.js server connected to your LLM).
+             =========================================================
+            */
+            
+            // 3. Simulate Backend Delay for Prototype
+            setTimeout(() => {
+                typingIndicator.style.display = 'none';
+                
+                // Simulated KB Bot Response
+                const mockResponse = `Based on the System Operations SOP (Doc Ref: 402-B), here is how to handle that request:\n\n1. Verify the user's ID via the portal.\n2. Navigate to the Admin Dashboard > Access Control.\n3. Follow the steps outlined in the attached training manual.\n\nWould you like me to pull up the exact documentation PDF?`;
+                
+                addMessage(mockResponse, 'bot');
+            }, 1500); // 1.5 second simulated delay
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSend();
+            }
+        });
+    </script>
+
+</body>
+</html>
